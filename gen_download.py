@@ -1,0 +1,261 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import os, json
+
+BASE = "/app/data/所有对话/主对话/uu-site1"
+
+# Read common CSS/JS from existing file to keep consistent
+# We'll regenerate them here for self-contained script
+COMMON_CSS = r"""
+:root{--primary:#1a73e8;--primary-dark:#1557b0;--secondary:#4285f4;--bg:#fff;--bg-light:#f8f9fa;--text:#202124;--text-sec:#5f6368;--border:#dadce0;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.08);--shadow-lg:0 8px 24px rgba(0,0,0,.12)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--text);background:var(--bg);line-height:1.6;overflow-x:hidden}
+a{color:var(--primary);text-decoration:none;transition:color .2s}a:hover{color:var(--primary-dark)}
+img{max-width:100%;height:auto;display:block}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center}
+.navbar .container{display:flex;align-items:center;justify-content:space-between;width:100%}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:1.25rem;font-weight:700;color:var(--text)}
+.nav-brand img{width:32px;height:32px;border-radius:6px}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none}
+.nav-links a{color:var(--text-sec);font-size:.95rem;font-weight:500}
+.nav-links a:hover{color:var(--primary)}
+.nav-dl-btn{background:var(--primary);color:#fff!important;padding:8px 22px;border-radius:24px;font-weight:600;font-size:.9rem;transition:all .2s}
+.nav-dl-btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.nav-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px}
+.nav-toggle span{width:24px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+.hero-cta{display:inline-flex;align-items:center;gap:10px;background:var(--primary);color:#fff;padding:16px 40px;border-radius:30px;font-size:1.1rem;font-weight:700;box-shadow:var(--shadow-lg);transition:all .25s;text-decoration:none}
+.hero-cta:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 12px 28px rgba(26,115,232,.35);color:#fff}
+.hero-cta svg{width:22px;height:22px}
+.faq-list{max-width:800px;margin:0 auto}
+.faq-item{border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;transition:all .2s}
+.faq-item.active{border-color:#4285f4;box-shadow:0 2px 12px rgba(66,133,244,.12)}
+.faq-question{padding:20px 24px;font-size:1rem;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#fff;user-select:none}
+.faq-question:hover{background:#f8f9fa}
+.faq-question .faq-icon{width:28px;height:28px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .3s;font-size:1.2rem;color:#1a73e8}
+.faq-item.active .faq-icon{transform:rotate(45deg)}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s ease}
+.faq-answer-inner{padding:0 24px 20px;color:#5f6368;font-size:.95rem;line-height:1.75}
+.section{padding:80px 0}
+.section-alt{background:#f8f9fa}
+.section-title{text-align:center;font-size:2rem;font-weight:700;margin-bottom:12px}
+.section-desc{text-align:center;color:#5f6368;max-width:560px;margin:0 auto 48px;font-size:1.05rem}
+.footer{background:#1a1a2e;color:#ccc;padding:60px 0 0}
+.footer-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:32px;margin-bottom:40px}
+.footer-col h4{color:#fff;font-size:1rem;font-weight:700;margin-bottom:16px}
+.footer-col ul{list-style:none}
+.footer-col li{margin-bottom:10px}
+.footer-col a{color:#999;font-size:.9rem}
+.footer-col a:hover{color:#fff}
+.footer-brand p{color:#888;font-size:.88rem;line-height:1.7;margin-top:12px}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding:20px 0;text-align:center;color:#666;font-size:.85rem}
+.download-btn-large{display:inline-flex;align-items:center;gap:12px;background:#1a73e8;color:#fff;padding:20px 56px;border-radius:30px;font-size:1.3rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.12);transition:all .25s;text-decoration:none}
+.download-btn-large:hover{background:#1557b0;transform:translateY(-2px);box-shadow:0 12px 28px rgba(26,115,232,.35);color:#fff}
+.info-card{background:#f8f9fa;border-radius:12px;padding:32px;max-width:700px;margin:0 auto}
+.info-card table{width:100%;border-collapse:collapse}
+.info-card td{padding:12px 16px;border-bottom:1px solid #dadce0;font-size:.95rem}
+.info-card td:first-child{font-weight:600;color:#202124;width:140px;white-space:nowrap}
+.info-card td:last-child{color:#5f6368}
+.install-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:48px}
+.step-card{text-align:center;padding:28px 20px}
+.step-number{width:48px;height:48px;border-radius:50%;background:#1a73e8;color:#fff;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.step-card h4{font-size:1rem;font-weight:700;margin-bottom:8px}
+.step-card p{font-size:.9rem;color:#5f6368;line-height:1.6}
+@media(max-width:1024px){.install-steps{grid-template-columns:repeat(2,1fr)}.footer-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){
+  .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:#fff;flex-direction:column;padding:20px;gap:16px;border-bottom:1px solid #dadce0;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  .nav-links.active{display:flex}
+  .nav-toggle{display:flex}
+  .install-steps{grid-template-columns:repeat(2,1fr)}
+  .footer-grid{grid-template-columns:repeat(2,1fr)}
+  .section{padding:60px 0}
+}
+@media(max-width:480px){
+  .install-steps{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .download-btn-large{padding:16px 36px;font-size:1.1rem}
+  .section{padding:48px 0}
+}
+"""
+
+COMMON_JS = r"""
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.faq-question').forEach(function(q){
+    q.addEventListener('click',function(){
+      var item=this.parentElement;var answer=item.querySelector('.faq-answer');var inner=answer.querySelector('.faq-answer-inner');
+      var isActive=item.classList.contains('active');
+      item.parentElement.querySelectorAll('.faq-item').forEach(function(fi){fi.classList.remove('active');fi.querySelector('.faq-answer').style.maxHeight='0';});
+      if(!isActive){item.classList.add('active');answer.style.maxHeight=inner.scrollHeight+'px';}
+    });
+  });
+  var toggle=document.querySelector('.nav-toggle');
+  if(toggle){toggle.addEventListener('click',function(){document.querySelector('.nav-links').classList.toggle('active');});}
+});
+"""
+
+NAVBAR = """
+<nav class="navbar"><div class="container">
+<a href="index.html" class="nav-brand"><img src="favicon.png" alt="UU加速器Logo" width="32" height="32">UU加速器</a>
+<ul class="nav-links">
+<li><a href="index.html#features">功能</a></li>
+<li><a href="index.html#scenes">场景</a></li>
+<li><a href="index.html#faq">FAQ</a></li>
+<li><a href="download.html" class="nav-dl-btn">立即下载</a></li>
+</ul>
+<div class="nav-toggle"><span></span><span></span><span></span></div>
+</div></nav>
+"""
+
+FOOTER = """
+<footer class="footer"><div class="container"><div class="footer-grid">
+<div class="footer-col footer-brand"><h4>UU加速器</h4><p>网易UU加速器，专注游戏加速十余年，覆盖3000+热门游戏，500+全球节点，为玩家提供低延迟、高稳定的游戏体验。</p></div>
+<div class="footer-col"><h4>功能特性</h4><ul>
+<li><a href="index.html#features">智能多线加速</a></li><li><a href="index.html#features">动态路由技术</a></li><li><a href="index.html#features">丢包防护</a></li><li><a href="index.html#features">全平台覆盖</a></li><li><a href="index.html#features">云存档同步</a></li>
+</ul></div>
+<div class="footer-col"><h4>加速场景</h4><ul>
+<li><a href="index.html#scenes">PC端游加速</a></li><li><a href="index.html#scenes">手游加速</a></li><li><a href="index.html#scenes">主机加速</a></li><li><a href="index.html#scenes">Steam平台加速</a></li>
+</ul></div>
+<div class="footer-col"><h4>帮助中心</h4><ul>
+<li><a href="index.html#faq">常见问题</a></li><li><a href="download.html">下载安装</a></li>
+</ul></div>
+<div class="footer-col"><h4>法律信息</h4><ul>
+<li><a href="privacy-policy.html">隐私政策</a></li><li><a href="user-agreement.html">用户协议</a></li><li><a href="cookie-policy.html">Cookie政策</a></li>
+</ul></div>
+</div><div class="footer-bottom"><p>\u00a9 2025 网易（杭州）网络有限公司 版权所有</p></div></div></footer>
+"""
+
+DL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+
+# Download FAQs (different from index)
+dl_faqs = [
+    ("UU加速器安装后占用多少系统资源？", "UU加速器运行时内存占用约80-120MB，CPU占用低于2%，对系统性能影响极小。加速过程中不会显著影响游戏帧率，在低配置电脑上也能稳定运行。"),
+    ("安装时提示"被安全软件拦截"怎么办？", "部分安全软件可能误报UU加速器为风险程序。请在安全软件中添加UU加速器安装目录至白名单，或暂时关闭安全软件后重新安装。安装完成后记得恢复安全软件防护。"),
+    ("UU加速器可以和游戏同时运行吗？", "完全可以。UU加速器作为网络优化工具，在游戏启动前或运行中开启都不会产生冲突。建议先启动UU加速器选择游戏节点加速，再启动游戏以获得最佳效果。"),
+    ("如何彻底卸载UU加速器？", "Windows用户可在「控制面板→程序和功能」中找到UU加速器点击卸载，或使用安装包自带的卸载程序。macOS用户将应用拖入废纸篓即可。卸载后建议清理注册表残留项以确保完全移除。"),
+    ("UU加速器支持多开加速吗？", "支持。UU加速器同一账号可在多台设备上同时使用，每台设备独立加速不互相影响。但同一台电脑上默认只支持加速一个游戏进程。"),
+    ("更新UU加速器会覆盖我的配置吗？", "不会。UU加速器的更新采用增量升级方式，您的个人设置、加速偏好和历史记录都会完整保留。自动更新在后台静默完成，不会中断您当前的加速状态。")
+]
+
+def sw_jsonld(**kw):
+    return {"@context":"https://schema.org","@type":"SoftwareApplication","name":kw.get("name","网易UU加速器"),"operatingSystem":"Windows 7+ / macOS 10.13+","applicationCategory":"GameApplication","softwareVersion":kw.get("ver","v5.76.0"),"fileSize":"62MB","downloadUrl":kw.get("dl","https://wy-uujiasu.com.cn/download.html"),"description":kw.get("desc","网易UU加速器电脑版免费下载，支持全平台3000+游戏加速。"),"author":{"@type":"Organization","name":"网易（杭州）网络有限公司"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.8","ratingCount":"128600"}}
+
+def faq_jsonld(faqs):
+    return {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in faqs]}
+
+def bc_jsonld(items):
+    return {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":i,"name":n,"item":u} for i,(n,u) in enumerate(items,1)]}
+
+def ld_script(*objs):
+    data = objs if len(objs)>1 else objs[0]
+    return '<script type="application/ld+json">'+json.dumps(data,ensure_ascii=False,indent=2)+'</script>'
+
+dl_ld = ld_script(
+    sw_jsonld(desc="网易UU加速器电脑版官方最新版免费下载，支持Windows/Mac全平台，62MB轻量安装包，覆盖3000+热门游戏加速。"),
+    faq_jsonld(dl_faqs),
+    bc_jsonld([("首页","https://wy-uujiasu.com.cn/"),("下载","https://wy-uujiasu.com.cn/download.html")])
+)
+
+dl_title = "UU加速器电脑版下载_网易UU网游加速器官方最新版免费安装"
+dl_desc = "网易UU加速器电脑版官方最新版免费下载，支持Windows 7+/macOS 10.13+系统，安装包仅62MB，一键安装即可加速3000+热门游戏。智能多线技术降低延迟80%，新用户注册即享免费试用。"
+dl_kw = "UU加速器下载,UU加速器电脑版,网易UU加速器下载,uu加速器安装,uu加速器PC版下载,网游加速器下载,uu加速器最新版下载,uu加速器免费版,uu加速器win版,uu加速器官方下载"
+dl_canonical = "https://wy-uujiasu.com.cn/download.html"
+
+dl_head = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{dl_title}</title>
+<meta name="description" content="{dl_desc}">
+<meta name="keywords" content="{dl_kw}">
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<link rel="canonical" href="{dl_canonical}">
+<link rel="alternate" hreflang="zh-CN" href="{dl_canonical}">
+<link rel="alternate" hreflang="x-default" href="{dl_canonical}">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta property="og:title" content="{dl_title}">
+<meta property="og:description" content="{dl_desc}">
+<meta property="og:url" content="{dl_canonical}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wy-uujiasu.com.cn/images/hero.webp">
+<meta property="og:site_name" content="UU加速器">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{dl_title}">
+<meta name="twitter:description" content="{dl_desc}">
+<meta name="twitter:image" content="https://wy-uujiasu.com.cn/images/hero.webp">
+<style>{COMMON_CSS}</style>
+{dl_ld}
+</head>"""
+
+faq_html = ""
+for q, a in dl_faqs:
+    faq_html += f'<div class="faq-item"><div class="faq-question"><span>{q}</span><div class="faq-icon">+</div></div><div class="faq-answer"><div class="faq-answer-inner">{a}</div></div></div>\n'
+
+dl_body = f"""<body>
+{NAVBAR}
+
+<section class="section" style="padding-top:100px;padding-bottom:40px;text-align:center">
+<div class="container">
+<h1 style="font-size:2.5rem;font-weight:800;margin-bottom:12px">下载网易<span style="color:#1a73e8">UU加速器</span></h1>
+<p style="color:#5f6368;font-size:1.15rem;max-width:560px;margin:0 auto">官方正版，安全无捆绑，新用户注册即享免费试用</p>
+<a href="#" class="download-btn-large" rel="nofollow sponsored">{DL_ICON} 立即下载 UU加速器</a>
+<p style="color:#999;font-size:.85rem;margin-top:12px">支持 Windows 7+ / macOS 10.13+ | 约62MB</p>
+</div>
+</section>
+
+<section class="section section-alt" style="padding:60px 0">
+<div class="container">
+<h2 class="section-title">软件信息</h2>
+<div class="info-card">
+<table>
+<tr><td>软件名称</td><td>网易UU加速器</td></tr>
+<tr><td>版本号</td><td>v5.76.0（2025年最新版）</td></tr>
+<tr><td>文件大小</td><td>约62MB</td></tr>
+<tr><td>系统要求</td><td>Windows 7及以上 / macOS 10.13及以上</td></tr>
+<tr><td>开发商</td><td>网易（杭州）网络有限公司</td></tr>
+<tr><td>支持平台</td><td>Windows / macOS / iOS / Android / PS5 / Xbox / Switch / Steam Deck</td></tr>
+<tr><td>更新时间</td><td>2025年</td></tr>
+</table>
+</div>
+</div>
+</section>
+
+<section class="section" style="padding:60px 0">
+<div class="container">
+<h2 class="section-title">安装指引</h2>
+<p class="section-desc">简单四步，快速完成UU加速器安装</p>
+<div class="install-steps">
+<div class="step-card"><div class="step-number">1</div><h4>下载安装包</h4><p>点击上方下载按钮，将UU加速器安装包保存至电脑本地目录。</p></div>
+<div class="step-card"><div class="step-number">2</div><h4>运行安装程序</h4><p>双击下载的UUAccelerator.exe安装包，按照安装向导提示操作。</p></div>
+<div class="step-card"><div class="step-number">3</div><h4>选择安装路径</h4><p>选择安装目录（建议使用默认路径），点击"立即安装"等待完成。</p></div>
+<div class="step-card"><div class="step-number">4</div><h4>启动并加速</h4><p>安装完成后启动UU加速器，注册登录，搜索游戏一键加速即可。</p></div>
+</div>
+</div>
+</section>
+
+<section class="section section-alt" id="faq">
+<div class="container">
+<h2 class="section-title">安装与使用常见问题</h2>
+<p class="section-desc">关于UU加速器安装和使用的常见疑问</p>
+<div class="faq-list">{faq_html}</div>
+</div>
+</section>
+
+<section style="background:linear-gradient(135deg,#1a73e8,#4285f4);padding:60px 0;text-align:center;color:#fff">
+<div class="container">
+<h2 style="font-size:2rem;font-weight:800;margin-bottom:12px">准备好开始加速了吗？</h2>
+<p style="font-size:1.05rem;opacity:.9;margin-bottom:28px">立即下载UU加速器，畅享3000+游戏极速体验</p>
+<a href="#" class="download-btn-large" style="background:#fff;color:#1a73e8" rel="nofollow sponsored">{DL_ICON} 立即下载 UU加速器</a>
+</div>
+</section>
+
+{FOOTER}
+<script>{COMMON_JS}</script>
+</body></html>"""
+
+with open(os.path.join(BASE, "download.html"), "w", encoding="utf-8") as f:
+    f.write(dl_head + "\n" + dl_body)
+print("download.html OK")

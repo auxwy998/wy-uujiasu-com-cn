@@ -1,0 +1,553 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import os
+
+BASE = "/app/data/所有对话/主对话/uu-site1"
+
+# ============================================================
+# Common CSS
+# ============================================================
+COMMON_CSS = """
+:root {
+  --primary: #1a73e8;
+  --primary-dark: #1557b0;
+  --secondary: #4285f4;
+  --bg: #ffffff;
+  --bg-light: #f8f9fa;
+  --text: #202124;
+  --text-secondary: #5f6368;
+  --border: #dadce0;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--text);background:var(--bg);line-height:1.6;overflow-x:hidden}
+a{color:var(--primary);text-decoration:none;transition:color .2s}
+a:hover{color:var(--primary-dark)}
+img{max-width:100%;height:auto;display:block}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* Navigation */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center}
+.navbar .container{display:flex;align-items:center;justify-content:space-between;width:100%}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:1.25rem;font-weight:700;color:var(--text)}
+.nav-brand img{width:32px;height:32px;border-radius:6px}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none}
+.nav-links a{color:var(--text-secondary);font-size:.95rem;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--primary)}
+.nav-download-btn{background:var(--primary);color:#fff!important;padding:8px 22px;border-radius:24px;font-weight:600;font-size:.9rem;transition:all .2s}
+.nav-download-btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.nav-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px}
+.nav-toggle span{width:24px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+
+/* Hero */
+.hero{padding:120px 0 60px;text-align:center;background:linear-gradient(180deg,#e8f0fe 0%,var(--bg) 100%)}
+.hero h1{font-size:2.75rem;font-weight:800;line-height:1.25;margin-bottom:16px;color:var(--text)}
+.hero h1 span{color:var(--primary)}
+.hero .subtitle{font-size:1.2rem;color:var(--text-secondary);max-width:640px;margin:0 auto 32px}
+.hero-cta{display:inline-flex;align-items:center;gap:10px;background:var(--primary);color:#fff;padding:16px 40px;border-radius:30px;font-size:1.1rem;font-weight:700;box-shadow:var(--shadow-lg);transition:all .25s;border:none;cursor:pointer}
+.hero-cta:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 12px 28px rgba(26,115,232,0.35);color:#fff}
+.hero-cta svg{width:22px;height:22px}
+.hero-image{margin:48px auto 0;max-width:900px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-lg)}
+.hero-image img{width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;border-radius:var(--radius)}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;color:#2e7d32;padding:6px 16px;border-radius:20px;font-size:.85rem;font-weight:600;margin-bottom:20px}
+
+/* Stats Bar */
+.stats-bar{background:var(--primary);padding:40px 0;color:#fff}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-item h3{font-size:2.5rem;font-weight:800;margin-bottom:4px}
+.stat-item p{font-size:.95rem;opacity:.85}
+
+/* Section Common */
+.section{padding:80px 0}
+.section-alt{background:var(--bg-light)}
+.section-title{text-align:center;font-size:2rem;font-weight:700;margin-bottom:12px}
+.section-desc{text-align:center;color:var(--text-secondary);max-width:560px;margin:0 auto 48px;font-size:1.05rem}
+
+/* Feature Cards */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.feature-card{background:var(--bg);border-radius:var(--radius);padding:36px 28px;box-shadow:var(--shadow);transition:all .25s;border:1px solid transparent}
+.feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--secondary)}
+.feature-icon{width:52px;height:52px;border-radius:12px;background:#e8f0fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.5rem}
+.feature-card h3{font-size:1.15rem;font-weight:700;margin-bottom:8px}
+.feature-card p{color:var(--text-secondary);font-size:.95rem;line-height:1.65}
+
+/* Scenes */
+.scenes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:28px}
+.scene-card{border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:all .25s;background:var(--bg)}
+.scene-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.scene-card img{aspect-ratio:16/9;width:100%;height:auto;object-fit:cover;border-radius:0}
+.scene-card .scene-info{padding:24px}
+.scene-card h3{font-size:1.15rem;font-weight:700;margin-bottom:8px}
+.scene-card p{color:var(--text-secondary);font-size:.93rem;line-height:1.6}
+
+/* Games */
+.games-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:20px;text-align:center}
+.game-item{background:var(--bg);border-radius:var(--radius);padding:24px 12px;box-shadow:var(--shadow);transition:all .25s}
+.game-item:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.game-item .game-icon{width:64px;height:64px;border-radius:16px;background:#e8f0fe;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+.game-item h4{font-size:.95rem;font-weight:600}
+
+/* FAQ */
+.faq-list{max-width:800px;margin:0 auto}
+.faq-item{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;transition:all .2s}
+.faq-item.active{border-color:var(--secondary);box-shadow:0 2px 12px rgba(66,133,244,0.12)}
+.faq-question{padding:20px 24px;font-size:1rem;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--bg);transition:background .2s;user-select:none}
+.faq-question:hover{background:var(--bg-light)}
+.faq-question .faq-icon{width:28px;height:28px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .3s;font-size:1.2rem;color:var(--primary)}
+.faq-item.active .faq-icon{transform:rotate(45deg)}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s ease}
+.faq-answer-inner{padding:0 24px 20px;color:var(--text-secondary);font-size:.95rem;line-height:1.75}
+
+/* CTA Section */
+.cta-section{background:linear-gradient(135deg,var(--primary),#4285f4);padding:80px 0;text-align:center;color:#fff}
+.cta-section h2{font-size:2.2rem;font-weight:800;margin-bottom:12px}
+.cta-section p{font-size:1.1rem;opacity:.9;margin-bottom:32px}
+.cta-section .hero-cta{background:#fff;color:var(--primary)}
+.cta-section .hero-cta:hover{background:#f0f0f0;color:var(--primary-dark)}
+
+/* Footer */
+.footer{background:#1a1a2e;color:#ccc;padding:60px 0 0}
+.footer-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:32px;margin-bottom:40px}
+.footer-col h4{color:#fff;font-size:1rem;font-weight:700;margin-bottom:16px}
+.footer-col ul{list-style:none}
+.footer-col li{margin-bottom:10px}
+.footer-col a{color:#999;font-size:.9rem;transition:color .2s}
+.footer-col a:hover{color:#fff}
+.footer-brand p{color:#888;font-size:.88rem;line-height:1.7;margin-top:12px}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.08);padding:20px 0;text-align:center;color:#666;font-size:.85rem}
+
+/* Breadcrumb */
+.breadcrumb{padding:80px 0 0;font-size:.9rem;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary)}
+.breadcrumb a:hover{color:var(--primary)}
+.breadcrumb span{margin:0 8px}
+
+/* Download Page Specific */
+.download-hero{text-align:center;padding:100px 0 60px}
+.download-btn-large{display:inline-flex;align-items:center;gap:12px;background:var(--primary);color:#fff;padding:20px 56px;border-radius:30px;font-size:1.3rem;font-weight:700;box-shadow:var(--shadow-lg);transition:all .25s;border:none;cursor:pointer;margin:32px 0}
+.download-btn-large:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 12px 28px rgba(26,115,232,0.35);color:#fff}
+.info-card{background:var(--bg-light);border-radius:var(--radius);padding:32px;max-width:700px;margin:0 auto}
+.info-card table{width:100%;border-collapse:collapse}
+.info-card td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:.95rem}
+.info-card td:first-child{font-weight:600;color:var(--text);width:140px;white-space:nowrap}
+.info-card td:last-child{color:var(--text-secondary)}
+.install-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:48px}
+.step-card{text-align:center;padding:28px 20px}
+.step-number{width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.step-card h4{font-size:1rem;font-weight:700;margin-bottom:8px}
+.step-card p{font-size:.9rem;color:var(--text-secondary);line-height:1.6}
+
+/* Legal Pages */
+.legal-content{padding:100px 0 60px;max-width:800px;margin:0 auto}
+.legal-content h1{font-size:2rem;font-weight:800;margin-bottom:8px}
+.legal-content .legal-update{color:var(--text-secondary);margin-bottom:40px;font-size:.95rem}
+.legal-content h2{font-size:1.3rem;font-weight:700;margin:36px 0 16px;padding-left:12px;border-left:4px solid var(--primary)}
+.legal-content p,.legal-content li{color:var(--text-secondary);font-size:.95rem;line-height:1.85;margin-bottom:12px}
+.legal-content ul{padding-left:24px;margin-bottom:16px}
+
+/* Responsive */
+@media(max-width:1024px){
+  .features-grid{grid-template-columns:repeat(2,1fr)}
+  .games-grid{grid-template-columns:repeat(3,1fr)}
+  .footer-grid{grid-template-columns:repeat(3,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:20px}
+  .install-steps{grid-template-columns:repeat(2,1fr)}
+  .hero h1{font-size:2.2rem}
+}
+@media(max-width:768px){
+  .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--bg);flex-direction:column;padding:20px;gap:16px;border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+  .nav-links.active{display:flex}
+  .nav-toggle{display:flex}
+  .features-grid{grid-template-columns:1fr}
+  .scenes-grid{grid-template-columns:1fr}
+  .games-grid{grid-template-columns:repeat(3,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .footer-grid{grid-template-columns:repeat(2,1fr)}
+  .install-steps{grid-template-columns:repeat(2,1fr)}
+  .hero{padding:100px 0 40px}
+  .hero h1{font-size:1.85rem}
+  .hero .subtitle{font-size:1.05rem}
+  .section{padding:60px 0}
+  .section-title{font-size:1.65rem}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:16px}
+  .stat-item h3{font-size:1.8rem}
+  .games-grid{grid-template-columns:repeat(2,1fr)}
+  .footer-grid{grid-template-columns:1fr}
+  .install-steps{grid-template-columns:1fr}
+  .hero h1{font-size:1.55rem}
+  .hero-cta{padding:14px 32px;font-size:1rem}
+  .download-btn-large{padding:16px 36px;font-size:1.1rem}
+  .section{padding:48px 0}
+  .section-title{font-size:1.4rem}
+}
+"""
+
+# Common JS
+COMMON_JS = """
+document.addEventListener('DOMContentLoaded',function(){
+  // FAQ Accordion
+  document.querySelectorAll('.faq-question').forEach(function(q){
+    q.addEventListener('click',function(){
+      var item=this.parentElement;
+      var answer=item.querySelector('.faq-answer');
+      var inner=answer.querySelector('.faq-answer-inner');
+      var isActive=item.classList.contains('active');
+      // Close all in same list
+      item.parentElement.querySelectorAll('.faq-item').forEach(function(fi){
+        fi.classList.remove('active');
+        fi.querySelector('.faq-answer').style.maxHeight='0';
+      });
+      if(!isActive){
+        item.classList.add('active');
+        answer.style.maxHeight=inner.scrollHeight+'px';
+      }
+    });
+  });
+  // Mobile nav
+  var toggle=document.querySelector('.nav-toggle');
+  if(toggle){
+    toggle.addEventListener('click',function(){
+      document.querySelector('.nav-links').classList.toggle('active');
+    });
+  }
+});
+"""
+
+# Navbar HTML
+NAVBAR_HTML = """
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="nav-brand"><img src="favicon.png" alt="UU加速器Logo" width="32" height="32">UU加速器</a>
+    <ul class="nav-links">
+      <li><a href="index.html#features">功能</a></li>
+      <li><a href="index.html#scenes">场景</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="download.html" class="nav-download-btn">立即下载</a></li>
+    </ul>
+    <div class="nav-toggle"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+"""
+
+# Footer HTML
+FOOTER_HTML = """
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <h4>UU加速器</h4>
+        <p>网易UU加速器，专注游戏加速十余年，覆盖3000+热门游戏，500+全球节点，为玩家提供低延迟、高稳定的游戏体验。</p>
+      </div>
+      <div class="footer-col">
+        <h4>功能特性</h4>
+        <ul>
+          <li><a href="index.html#features">智能多线加速</a></li>
+          <li><a href="index.html#features">动态路由技术</a></li>
+          <li><a href="index.html#features">丢包防护</a></li>
+          <li><a href="index.html#features">全平台覆盖</a></li>
+          <li><a href="index.html#features">云存档同步</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>加速场景</h4>
+        <ul>
+          <li><a href="index.html#scenes">PC端游加速</a></li>
+          <li><a href="index.html#scenes">手游加速</a></li>
+          <li><a href="index.html#scenes">主机加速</a></li>
+          <li><a href="index.html#scenes">Steam平台加速</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>帮助中心</h4>
+        <ul>
+          <li><a href="index.html#faq">常见问题</a></li>
+          <li><a href="download.html">下载安装</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>法律信息</h4>
+        <ul>
+          <li><a href="privacy-policy.html">隐私政策</a></li>
+          <li><a href="user-agreement.html">用户协议</a></li>
+          <li><a href="cookie-policy.html">Cookie政策</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 网易（杭州）网络有限公司 版权所有</p>
+    </div>
+  </div>
+</footer>
+"""
+
+
+# ============================================================
+# JSON-LD generators
+# ============================================================
+def make_software_jsonld(**kw):
+    return {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": kw.get("name", "网易UU加速器"),
+        "operatingSystem": "Windows 7+ / macOS 10.13+",
+        "applicationCategory": "GameApplication",
+        "softwareVersion": kw.get("version", "v5.76.0"),
+        "fileSize": "62MB",
+        "downloadUrl": kw.get("downloadUrl", "https://wy-uujiasu.com.cn/download.html"),
+        "description": kw.get("description", "网易UU加速器，支持3000+热门游戏加速，采用智能多线技术降低延迟80%。"),
+        "author": {"@type": "Organization", "name": "网易（杭州）网络有限公司"},
+        "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "128600"}
+    }
+
+def make_faq_jsonld(faqs):
+    return {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faqs]
+    }
+
+def make_breadcrumb_jsonld(items):
+    el = []
+    for i, (name, url) in enumerate(items, 1):
+        el.append({"@type": "ListItem", "position": i, "name": name, "item": url})
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": el}
+
+import json
+def jsonld(*objs):
+    return '<script type="application/ld+json">' + json.dumps(objs if len(objs)>1 else objs[0], ensure_ascii=False, indent=2) + '</script>'
+
+
+# ============================================================
+# HEAD builder
+# ============================================================
+def build_head(title, desc, keywords, canonical_url, og_image="images/hero.webp", extra_jsonld=None):
+    base = canonical_url.rstrip('/')
+    canonical = canonical_url
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{title}</title>
+<meta name="description" content="{desc}">
+<meta name="keywords" content="{keywords}">
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<link rel="canonical" href="{canonical}">
+<link rel="alternate" hreflang="zh-CN" href="{canonical}">
+<link rel="alternate" hreflang="x-default" href="{canonical}">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<!-- OG -->
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{desc}">
+<meta property="og:url" content="{canonical}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{base}/{og_image}">
+<meta property="og:site_name" content="UU加速器">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{desc}">
+<meta name="twitter:image" content="{base}/{og_image}">
+<style>{COMMON_CSS}</style>
+{extra_jsonld or ''}
+</head>"""
+
+
+# ============================================================
+# 1. index.html
+# ============================================================
+INDEX_TITLE = "UU加速器电脑版下载_网易UU网游加速器官方最新版免费安装"
+INDEX_DESC = "网易UU加速器电脑版免费下载，支持Windows/Mac全平台，覆盖3000+热门游戏加速。采用智能多线与动态多线技术降低延迟80%，一键加速绝地求生、Steam、LOL等外服游戏，专线节点稳定不掉线，新用户免费试用。"
+INDEX_KW = "UU加速器下载,UU加速器电脑版,网易UU加速器,网游加速器下载,uu加速器官方下载,uu网游加速器,uu加速器PC版,uu加速器win版,uu加速器最新版,uu加速器免费版"
+INDEX_URL = "https://wy-uujiasu.com.cn/"
+
+index_faqs = [
+    ("UU加速器支持哪些游戏平台？", "网易UU加速器全面支持Windows PC、macOS、iOS、Android、PS5、Xbox、Nintendo Switch及Steam Deck等主流平台，无论您在哪个设备上游戏，都能享受低延迟的加速体验。"),
+    ("UU加速器的加速原理是什么？", "UU加速器采用智能多线与动态路由技术，在全球部署500+专线节点，通过最优路径转发游戏数据流量，有效降低网络延迟高达80%，同时提供丢包防护确保连接稳定不掉线。"),
+    ("UU加速器新用户有免费试用吗？", "新用户注册后即可享受免费试用时长，体验全功能加速服务。试用期间可加速所有3000+款支持的游戏，不限速、不限节点，充分感受加速效果后再决定是否订阅。"),
+    ("UU加速器能加速Steam等外服游戏平台吗？", "完全可以。UU加速器对Steam、Epic、Origin、Battle.net等各大游戏平台提供专项优化加速，无论是商店页面加载、游戏下载更新还是外服联机对战，都能显著改善网络体验。"),
+    ("UU加速器会导致游戏账号被封吗？", "不会。UU加速器是正规的网络加速工具，仅优化网络路由路径，不修改游戏数据、不注入游戏进程，与游戏外挂有本质区别。网易作为上市企业，旗下产品合规运营，5000万+用户安心使用。"),
+    ("如何设置UU加速器开机自启动？", "安装完成后，打开UU加速器进入设置页面，勾选"开机自动启动"和"启动后自动加速"选项即可。之后每次开机时UU加速器会自动运行并加速您上次使用的游戏，无需手动操作。")
+]
+
+index_jsonld = jsonld(
+    make_software_jsonld(),
+    make_faq_jsonld(index_faqs),
+    make_breadcrumb_jsonlib([("首页", "https://wy-uujiasu.com.cn/")])
+)
+
+index_head = build_head(INDEX_TITLE, INDEX_DESC, INDEX_KW, INDEX_URL, extra_jsonld=index_jsonld)
+
+# Build index body
+index_body = f"""<body>
+{NAVBAR_HTML}
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">🎮 2025全新升级 v5.76.0</div>
+    <h1>网易<span>UU加速器</span>电脑版<br>一键加速 畅享游戏</h1>
+    <p class="subtitle">覆盖3000+热门游戏，500+全球专线节点，智能多线技术降低延迟80%，支持Windows/Mac全平台免费下载安装</p>
+    <a href="download.html" class="hero-cta" rel="nofollow sponsored">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      免费下载 UU加速器
+    </a>
+    <div class="hero-image">
+      <img src="images/hero.webp" alt="网易UU加速器电脑版界面截图" width="900" height="506" loading="lazy" style="aspect-ratio:16/9;width:100%;height:auto;object-fit:cover;border-radius:12px;">
+    </div>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item"><h3>3000+</h3><p>支持游戏数量</p></div>
+      <div class="stat-item"><h3>500+</h3><p>全球专线节点</p></div>
+      <div class="stat-item"><h3>5000万+</h3><p>注册用户数</p></div>
+      <div class="stat-item"><h3>80%</h3><p>延迟降低幅度</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section section-alt" id="features">
+  <div class="container">
+    <h2 class="section-title">核心加速技术</h2>
+    <p class="section-desc">六大核心技术加持，为您的游戏体验提供全方位保障</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔀</div>
+        <h3>智能多线技术</h3>
+        <p>同时连接多条优质线路，智能选择最优通道传输数据，即使单线波动也能无缝切换，保障游戏连接始终流畅稳定。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛤️</div>
+        <h3>动态路由优化</h3>
+        <p>实时监测全球500+节点状态，毫秒级动态调整数据传输路径，自动避开网络拥堵节点，确保数据包以最短路径到达游戏服务器。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>丢包防护引擎</h3>
+        <p>自研前向纠错算法搭配智能重传机制，有效降低网络丢包率至0.1%以下，告别因丢包导致的卡顿、掉线和人物回弹。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>全平台覆盖</h3>
+        <p>一个账号同时支持Windows、macOS、iOS、Android、PS5、Xbox、Switch、Steam Deck八大平台，数据同步，随时切换设备无缝加速。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">☁️</div>
+        <h3>云存档同步</h3>
+        <p>游戏配置与存档自动云端备份，跨设备无缝同步，换设备也不怕丢失游戏进度，随时随地继续您的游戏旅程。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>专属客服支持</h3>
+        <p>7×24小时在线客服团队，平均响应时间低于30秒。提供一对一网络诊断、节点推荐及个性化加速方案定制服务。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Scenes -->
+<section class="section" id="scenes">
+  <div class="container">
+    <h2 class="section-title">多场景加速方案</h2>
+    <p class="section-desc">无论您在哪里、用什么设备游戏，UU加速器都能提供专业加速方案</p>
+    <div class="scenes-grid">
+      <div class="scene-card">
+        <img src="images/scene1.webp" alt="PC端游加速场景" width="600" height="338" loading="lazy" style="aspect-ratio:16/9;width:100%;height:auto;object-fit:cover;border-radius:12px 12px 0 0;">
+        <div class="scene-info">
+          <h3>PC端游加速</h3>
+          <p>针对Windows/macOS电脑端大型网络游戏深度优化，支持英雄联盟、绝地求生、永劫无间等热门端游专线加速，毫秒级延迟响应，让每一次操作都精准到位。</p>
+        </div>
+      </div>
+      <div class="scene-card">
+        <img src="images/scene2.webp" alt="手游加速场景" width="600" height="338" loading="lazy" style="aspect-ratio:16/9;width:100%;height:auto;object-fit:cover;border-radius:12px 12px 0 0;">
+        <div class="scene-info">
+          <h3>手游加速</h3>
+          <p>专为移动端设计的加速方案，支持iOS和Android设备，智能识别手游流量并优化传输路径，有效降低手游延迟和卡顿，让王者荣耀、和平精英等手游操作更流畅。</p>
+        </div>
+      </div>
+      <div class="scene-card">
+        <img src="images/scene3.webp" alt="主机加速场景" width="600" height="338" loading="lazy" style="aspect-ratio:16/9;width:100%;height:auto;object-fit:cover;border-radius:12px 12px 0 0;">
+        <div class="scene-info">
+          <h3>主机加速</h3>
+          <p>为PS5、Xbox、Nintendo Switch主机用户提供专属加速通道，解决主机联机匹配慢、下载更新速度慢、跨区联机高延迟等问题，畅享主机游戏联机乐趣。</p>
+        </div>
+      </div>
+      <div class="scene-card">
+        <img src="images/scene4.webp" alt="Steam平台加速场景" width="600" height="338" loading="lazy" style="aspect-ratio:16/9;width:100%;height:auto;object-fit:cover;border-radius:12px 12px 0 0;">
+        <div class="scene-info">
+          <h3>Steam平台加速</h3>
+          <p>针对Steam社区、商店、创意工坊及游戏下载提供专项加速，解决页面加载缓慢、社区无法访问等问题，同时优化Steam联机游戏延迟，畅快体验海量Steam游戏。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Popular Games -->
+<section class="section section-alt" id="games">
+  <div class="container">
+    <h2 class="section-title">热门加速游戏</h2>
+    <p class="section-desc">覆盖3000+热门游戏，以下是玩家最爱加速的爆款游戏</p>
+    <div class="games-grid">
+      <div class="game-item"><div class="game-icon">⚔️</div><h4>英雄联盟</h4></div>
+      <div class="game-item"><div class="game-icon">🍳</div><h4>绝地求生</h4></div>
+      <div class="game-item"><div class="game-icon">🗡️</div><h4>永劫无间</h4></div>
+      <div class="game-item"><div class="game-icon">🌟</div><h4>原神</h4></div>
+      <div class="game-item"><div class="game-icon">👑</div><h4>王者荣耀</h4></div>
+      <div class="game-item"><div class="game-icon">🔫</div><h4>CS2</h4></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <h2 class="section-title">常见问题</h2>
+    <p class="section-desc">关于UU加速器的常见疑问，在这里找到答案</p>
+    <div class="faq-list">
+"""
+for q, a in index_faqs:
+    index_body += f"""      <div class="faq-item">
+        <div class="faq-question"><span>{q}</span><div class="faq-icon">+</div></div>
+        <div class="faq-answer"><div class="faq-answer-inner">{a}</div></div>
+      </div>
+"""
+
+index_body += f"""    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>立即体验极速游戏加速</h2>
+    <p>免费下载网易UU加速器，新用户即享免费试用</p>
+    <a href="download.html" class="hero-cta" rel="nofollow sponsored">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      免费下载 UU加速器
+    </a>
+  </div>
+</section>
+
+{FOOTER_HTML}
+
+<script>{COMMON_JS}</script>
+</body>
+</html>"""
+
+with open(os.path.join(BASE, "index.html"), "w", encoding="utf-8") as f:
+    f.write(index_head + "\n" + index_body)
+
+print("index.html done")
